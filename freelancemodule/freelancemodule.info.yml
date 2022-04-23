@@ -1,0 +1,18 @@
+name: freelancemodule
+type: theme
+description: Custom theme for Farfume store
+package: Other
+core: 8.x
+screenshot: screenshot.png
+libraries:
+  - freelancemodule/global
+
+base theme: false
+
+regions:
+  header: Header
+  banner: Banner
+  sidebar: Side bar
+  rightsidebar: Right Side bar
+  content: Content
+  footer: Footer

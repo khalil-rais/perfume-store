@@ -1,0 +1,14 @@
+.outtaHere {
+	position:absolute;
+	left:-3000px;
+}
+/*Radio buttons*/
+.radioArea, .radioAreaChecked {
+	float:left;
+	width:30px !important;
+	height:30px;
+	background: url(../images/radio.png) no-repeat;
+	overflow: hidden;
+	margin:8px 3px 0 0;
+}
+.radioAreaChecked {background-position: 0 -30px;}

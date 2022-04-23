@@ -1,0 +1,84 @@
+{#
+/**
+ * @file
+ *
+ * Default product template.
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the wrapper.
+ * - product: The rendered product fields.
+ *   Use 'product' to print them all, or print a subset such as
+ *   'product.title'. Use the following code to exclude the
+ *   printing of a given field:
+ *   @code
+ *   {{ product|without('title') }}
+ *   @endcode
+ * - product_entity: The product entity.
+ * - product_url: The product URL.
+ *
+ * @ingroup themeable
+ */
+#}
+  <!--INNER BANNER START-->
+
+<div id="inner-banner">
+	<div class="container">
+	  <h1>Bleu De Chanel</h1>
+	  <em>We are Parfuma Perfume Store where you can explore all kinds of Perfume</em>
+	  <ol class="breadcrumb">
+	    <li><a href="#">Home</a></li>
+	    <li><a href="#">Shop</a></li>
+	    <li class="active">Product  Details</li>
+	  </ol>
+	</div>
+</div>
+  <!--INNER BANNER END--> 
+
+
+  <!--MAIN START-->
+<div id="main">
+	<section class="product-detail">
+	  <div class="top-row">
+	    <div class="container">
+	      <div class="row">
+	      	{% if user.hasPermission('administer commerce_product_attribute') %}
+      			<div class="col-md-12">
+			  				<a href="{{ edit_product }}" class="btn-style-1">Edit Prodcut<i class="fa fa-angle-right" aria-hidden="true"></i>
+			        </a>
+						</div>
+  				{% endif %}
+	        <div class="col-md-6 col-sm-6">
+	          <div class="frame"> {{ product.variation_field_photo_detail }}</div>
+	        </div>
+	        <div class="col-md-6 col-sm-6">
+	          <div class="text-box">
+	            <h2>{{ product.title }}</h2>
+	            
+				<div class="list-box"> <strong class="title">Price:</strong>
+	            	<span>{{ product.variation_price }}</span>
+	            </div>	
+	            <div class="list-box"> <strong class="title">Marque:</strong>
+	            	<span>{{ product.variation_field_marque2}}</span>
+	            </div>	            
+	            {% if product.variation_field_contenu_lot %}
+		            <div class="list-box"> <strong class="title lot">Contenu du lot:</strong>
+		            	<span class="lot_value">{{ product.variation_field_contenu_lot}}</span>
+		            </div>
+	            {% endif %} 
+	            <div class="list-box"> <strong class="title">Substance:</strong>
+	            	<span>{{ product.variation_field_substance}}</span>
+	            </div>	 
+
+	            <div class="list-box"> <strong class="title">Usage:</strong>
+	            	<span>{{ product.variation_field_usage}}</span>
+	            </div>	 
+	            <div class="list-box volume"> <strong class="title">Volume Flacon:</strong>
+	             {{ product.variations|without('title') }} 
+	            </div>
+	          </div>
+	        </div>
+	      </div>
+	    </div>
+	  </div>
+	</section>
+</div>

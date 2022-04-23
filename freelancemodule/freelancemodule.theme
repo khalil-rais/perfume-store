@@ -1,0 +1,200 @@
+<?php
+use Drupal\Component\Utility\NestedArray;
+
+/**
+ * Implements template_preprocess_image().
+ */
+function freelancemodule_preprocess_image(&$vars) {
+
+  if ($vars['style_name'] == 'commerce_original') {
+    // Remove explicit width & height declaration.
+    unset($vars['width'], $vars['height'], $vars['attributes']['width'], $vars['attributes']['height']);
+  }
+}
+
+function freelancemodule_preprocess_field(&$variables, $hook){
+					
+					//var_dump(array_keys($variables));
+					if ($variables['field_name']=="title"){
+						//$check_text = get_class ($variables['element']['#items']);
+						$check_text = $variables['element']['#items'];
+						$mon_titre = $check_text->getValue();
+						$product_name = preg_split("/[\s,]+(COFFRET)|[\s,]+(body spray)|[\s,]+(ed[t|p] vaporisateur)|[\s,]+(agua de eau de cologne)/", $mon_titre [0]["value"]);
+						if (isset($product_name[0])){
+							$mon_titre [0]["value"] = $product_name[0];
+						}
+						$mon_titre [0]["value"] = "jojo";
+						$result = $variables['element']['#items']->setValue($mon_titre);
+
+						ob_start();
+						var_dump($result);
+						$dumpy = ob_get_clean();				
+						\Drupal::logger('parfum')->notice('marques_list: '.$dumpy);
+						/*
+						marques_list: array(2) { 
+							[0]=> array(2) { 
+								["value"]=> string(35) "LA PANTHÈRE edp vaporisateur 75 ml" 
+								["_attributes"]=> array(0) { } 
+							} ["value"]=> string(0) "" }
+						
+						
+						*/
+						//marques_list: array(20) { [0]=> string(6) "#theme" [1]=> string(6) "#title" [2]=> string(14) "#label_display" [3]=> string(10) "#view_mode" [4]=> string(9) "#language" [5]=> string(11) "#field_name" [6]=> string(11) "#field_type" [7]=> string(19) "#field_translatable" [8]=> string(12) "#entity_type" [9]=> string(7) "#bundle" [10]=> string(7) "#object" [11]=> string(6) "#items" [12]=> string(10) "#formatter" [13]=> string(12) "#is_multiple" [14]=> int(0) [15]=> string(6) "#cache" [16]=> string(7) "#weight" [17]=> string(9) "#attached" [18]=> string(9) "#children" [19]=> string(16) "#render_children" }
+
+					}
+					
+					
+
+	
+}
+
+
+
+/**
+ * Implements hook_preprocess_page() for page.html.twig.
+ */
+function freelancemodule_preprocess_node(array &$variables) {
+
+
+	if (isset($variables['node'])){
+		if ($variables['node']->getType() == 'front_page'){
+			$viewResults = views_get_view_result('new_arrived_product', 'block_1');
+			foreach($viewResults as $viewRow) {
+				$entity = $viewRow->_entity;
+				$target_id = $entity->get('field_photo_detail')->getValue()[0]['target_id'];
+				$file = \Drupal\file\Entity\File::load($target_id);
+				$file_uri = $file->getFileUri();
+				$var['photo_url'] = file_create_url($file_uri);
+				$var['title'] = $entity->get('title')->getValue()[0]['value'];
+				$var['price'] = $entity->get('price')->getValue()[0]['number'];
+				$variables['products'][] = $var;
+			}
+		}
+	}
+}
+
+function freelancemodule_form_contact_message_feedback_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id){
+
+	// Name
+  $form['name']['#prefix'] = '<div class="col-md-6 col-md-6">';
+  $form['name']['#suffix'] = '</div>';
+  $form['name']['#attributes']['placeholder'][] = $form['name']['#title'].'*';
+  $form['name']['#attributes']['class'][] = 'form-control';
+  unset($form['name']['#title']);
+
+  // Mail
+  $form['mail']['#prefix'] = '<div class="col-md-6 col-md-6">';
+  $form['mail']['#suffix'] = '</div>';
+  $form['mail']['#attributes']['placeholder'][] = $form['mail']['#title'].'*';
+  $form['mail']['#attributes']['class'][] = 'form-control';
+  unset($form['mail']['#title']);
+
+  // Subject
+  $form['field_select_subject_contact']['#prefix'] = '<div class="col-md-12 col-sm-12">';
+  $form['field_select_subject_contact']['#suffix'] = '</div>';
+  $form['field_select_subject_contact']['widget']['value']['#attributes']['class'][] = 'form-control';
+  $form['field_select_subject_contact']['widget']['value']['#attributes']['placeholder'][] = $form['field_select_subject_contact']['widget']['#title'].'*';
+  $form['field_select_subject_contact']['widget']['#title'] = '';
+  unset($form['field_select_subject_contact']['widget']['value']['#title']);
+
+	// Phone number
+  $form['field_phone_number_contact']['#prefix'] = '<div class="col-md-6 col-md-6">';
+  $form['field_phone_number_contact']['#suffix'] = '</div>';
+  $form['field_phone_number_contact']['widget'][0]['value']['#attributes']['placeholder'][] = $form['field_phone_number_contact']['widget'][0]['#title'];
+  $form['field_phone_number_contact']['widget']['value']['#attributes']['class'][] = 'form-control';
+  unset($form['field_phone_number_contact']['widget'][0]['value']['#title']);
+
+  //Command number
+
+  $form['field_command_number_contact']['widget'][0]['value']['#attributes']['placeholder'][] = $form['field_command_number_contact']['widget'][0]['#title'];
+  $form['field_command_number_contact']['widget']['value']['#attributes']['class'][] = 'form-control';
+  unset($form['field_command_number_contact']['widget'][0]['value']['#title']);
+  $form['field_command_number_contact']['#prefix'] = '<div class="col-md-6 col-md-6">';
+  $form['field_command_number_contact']['#suffix'] = '</div>';
+
+  // Message
+  $form['message']['widget']['value']['#attributes']['class'][] = 'form-control';
+  $form['message']['widget'][0]['value']['#attributes']['placeholder'][] = $form['message']['widget'][0]['#title'].'*';
+  $form['message']['widget'][0]['#title'] = '';
+  unset($form['message']['widget'][0]['value']['#title']);
+  $form['message']['widget']['#prefix'] = '<div class="col-md-12">';
+  $form['message']['widget']['#suffix'] = '</div>';
+
+    // Submit
+  $form['actions']['#prefix'] = '<div class="col-md-12">';
+  $form['actions']['#suffix'] = '</div>';
+  $form['actions']['preview']['#access'] = FALSE;
+}
+
+function freelancemodule_preprocess_html(&$variables) {
+	$variables['#attached']['drupalSettings']['path']['themeUrl'] = \Drupal::theme()->getActiveTheme()->getPath();
+	// echo $variables['afficher_cookies_message'];
+	if (!isset($_SESSION['afficher_cookies_message']) and \Drupal::currentUser()->isAnonymous()){
+		$variables['afficher_cookies_message'] = TRUE;
+	}
+ 
+}
+
+function freelancemodule_preprocess_breadcrumb(&$variables){
+
+  $menu_tree = Drupal::menuTree();
+  $parameters = $menu_tree->getCurrentRouteMenuTreeParameters('main');
+  $tree = $menu_tree->load('main', $parameters);
+
+  do {
+    $current_tree = freelancemodule_get_current_menu_tree($tree);
+    if (isset($current_tree)){
+      $current_tree_f = $current_tree;
+      unset($current_tree_f['data_subtree']);
+      $current_tree_final[] = $current_tree_f;
+    }
+    $tree = $current_tree['data_subtree'];   
+  } while ($tree);
+
+  if (isset($current_tree_final)){
+    $variables['tree'] = $current_tree_final;
+  }
+
+
+}
+
+function freelancemodule_get_current_menu_tree($tree){
+
+ foreach ($tree as $data) {
+  if ($data->inActiveTrail){
+    $link = $data->link;
+    $url = $link->getUrlObject();
+    $url->setOption('set_active_class', TRUE);
+    if (isset($data->options)) {
+        $url->setOptions(NestedArray::mergeDeep($url->getOptions(), $data->options));
+    }    
+    return array( 'title' => $link->getTitle(),
+                  'link' => $url,
+                  'data_subtree' => $data->subtree
+                );
+  }
+ }  
+}
+
+function freelancemodule_preprocess_commerce_product(&$variables){
+  $current_path = \Drupal::service('path.current')->getPath();
+  $base_url = \Drupal::request()->getBaseUrl();
+  $variables['edit_product'] = $base_url.$current_path.'/edit';
+}  
+
+function freelancemodule_preprocess_views_view_table(&$variables){
+  if (isset($variables['caption']['#markup'])){
+    if ($variables['caption']['#markup'] == 'final_cart'){
+      $variables['final_cart'] = TRUE;
+    }
+    else if ($variables['caption']['#markup'] == 'order_information'){
+      $variables['order_information'] = TRUE;
+    }
+  } 
+}
+
+function freelancemodule_form_alter(&$form, &$form_state, $form_id) {
+  if($form_id == 'user_login_form') {
+    $form['#attributes']['class'][] = 'container';
+  }  
+}

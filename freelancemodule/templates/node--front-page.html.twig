@@ -1,0 +1,452 @@
+{#
+/**
+ * @file
+ * Default theme implementation to display a node.
+ *
+ * Available variables:
+ * - node: The node entity with limited access to object properties and methods.
+ *   Only method names starting with "get", "has", or "is" and a few common
+ *   methods such as "id", "label", and "bundle" are available. For example:
+ *   - node.getCreatedTime() will return the node creation timestamp.
+ *   - node.hasField('field_example') returns TRUE if the node bundle includes
+ *     field_example. (This does not indicate the presence of a value in this
+ *     field.)
+ *   - node.isPublished() will return whether the node is published or not.
+ *   Calling other methods, such as node.delete(), will result in an exception.
+ *   See \Drupal\node\Entity\Node for a full list of public properties and
+ *   methods for the node object.
+ * - label: The title of the node.
+ * - content: All node items. Use {{ content }} to print them all,
+ *   or print a subset such as {{ content.field_example }}. Use
+ *   {{ content|without('field_example') }} to temporarily suppress the printing
+ *   of a given child element.
+ * - author_picture: The node author user entity, rendered using the "compact"
+ *   view mode.
+ * - metadata: Metadata for this node.
+ * - date: Themed creation date field.
+ * - author_name: Themed author name field.
+ * - url: Direct URL of the current node.
+ * - display_submitted: Whether submission information should be displayed.
+ * - attributes: HTML attributes for the containing element.
+ *   The attributes.class element may contain one or more of the following
+ *   classes:
+ *   - node: The current template type (also known as a "theming hook").
+ *   - node--type-[type]: The current node type. For example, if the node is an
+ *     "Article" it would result in "node--type-article". Note that the machine
+ *     name will often be in a short form of the human readable label.
+ *   - node--view-mode-[view_mode]: The View Mode of the node; for example, a
+ *     teaser would result in: "node--view-mode-teaser", and
+ *     full: "node--view-mode-full".
+ *   The following are controlled through the node publishing options.
+ *   - node--promoted: Appears on nodes promoted to the front page.
+ *   - node--sticky: Appears on nodes ordered above other non-sticky nodes in
+ *     teaser listings.
+ *   - node--unpublished: Appears on unpublished nodes visible only to site
+ *     admins.
+ * - title_attributes: Same as attributes, except applied to the main title
+ *   tag that appears in the template.
+ * - content_attributes: Same as attributes, except applied to the main
+ *   content tag that appears in the template.
+ * - author_attributes: Same as attributes, except applied to the author of
+ *   the node tag that appears in the template.
+ * - title_prefix: Additional output populated by modules, intended to be
+ *   displayed in front of the main title tag that appears in the template.
+ * - title_suffix: Additional output populated by modules, intended to be
+ *   displayed after the main title tag that appears in the template.
+ * - view_mode: View mode; for example, "teaser" or "full".
+ * - teaser: Flag for the teaser state. Will be true if view_mode is 'teaser'.
+ * - page: Flag for the full page state. Will be true if view_mode is 'full'.
+ * - readmore: Flag for more state. Will be true if the teaser content of the
+ *   node cannot hold the main body content.
+ * - logged_in: Flag for authenticated user status. Will be true when the
+ *   current user is a logged-in member.
+ * - is_admin: Flag for admin user status. Will be true when the current user
+ *   is an administrator.
+ *
+ * @see template_preprocess_node()
+ *
+ * @todo Remove the id attribute (or make it a class), because if that gets
+ *   rendered twice on a page this is invalid CSS for example: two lists
+ *   in different view modes.
+ *
+ * @ingroup themeable
+ */
+#}
+
+
+
+
+<div id="banner">
+  <div class="owl-carousel" id="home-banner">
+
+    {% for item in node.field_carrousel_front_page %}
+      {% set p = paragraph_load(item.target_id) %}
+      {% if p.field_picture_carousel.target_id is defined %}
+         {% set  url_image = image_style(p.field_picture_carousel.target_id,'original') %}
+      {% endif %}
+      <div class="item"> <img src="{{ url_image }}" alt="img">
+        <div class="caption">
+          <div class="container">
+            <div class="slide-1">
+              <h1><em>{% if p.field_main_title_carousel.value is not empty %}{{ p.field_main_title_carousel.value|raw }} {% endif %}</em>{% if p.field_sub_title_carousel.value  is not empty %}{{ p.field_sub_title_carousel.value|raw }}{% endif %}</h1>
+
+              <a href="{{p.field_url_carousel.uri}}" class="btn-style-1">{{p.field_url_carousel.title}}</a> </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}    
+  </div>
+</div>
+<div id="main"> 
+  <!--SERVICES SECTION START-->
+  <section class="services-section">
+    <div class="container">
+      <div class="row">
+        {% for item in node.field_3_b_h_front_page %}
+          {% set p = paragraph_load(item.target_id) %}
+          {% if p.field_logo_3_b_h.target_id is defined %}
+             {% set  url_image = image_style(p.field_logo_3_b_h.target_id,'original') %}
+          {% endif %}
+
+          <div class="col-md-4 col-sm-4">
+            <div class="box"> <img src="{{ url_image }}" alt="img">
+              <div class="text-col"> <a href="{{p.field_url_3_b_h.uri}}">{% if p.field_main_title_3_b_h.value is not empty %}{{ p.field_main_title_3_b_h.value|raw }} {% endif %}</a>
+                <p>{% if p.field_sub_title_3_b_h.value  is not empty %}{{ p.field_sub_title_3_b_h.value|raw }}{% else %}<img src="{{ base_path ~ directory }}/images/Pyament_Methods.png" alt="Moyens de Paiement">{% endif %}</p>
+              </div>
+            </div>
+          </div>
+       {% endfor %} 
+      </div>
+    </div>
+  </section>
+  <!--SERVICES SECTION END--> 
+  
+  <!--ADS SECTION START-->
+  <section class="advertise-section">
+    <div class="container">
+      <div class="row">
+        {% for item in node.field_2_b_h_front_page %}
+          {% set p = paragraph_load(item.target_id) %}
+          {% if p.field_picture_2_b_h.target_id is defined %}
+             {% set  url_image = image_style(p.field_picture_2_b_h.target_id,'original') %}
+          {% endif %}
+         
+        <div class="col-md-6 col-sm-6">
+          <div class="box"> <img src="{{ url_image }}" alt="img">
+            <div class="caption"> 
+              <strong class="title">{% if p.field_main_title_2_b_h.value is not empty %}{{ p.field_main_title_2_b_h.value|raw }} {% endif %}</strong>
+              <h2><a href="{{ p.field_sub_title_2_b_h.0.url }}">{% if p.field_sub_title_2_b_h.0.title  is not empty %}{{ p.field_sub_title_2_b_h.0.title }}{% endif %}</a></h2>
+              <a href="{{ p.field_catalogue_2_b_h.0.url }}" class="link">Parcourir le Catalogue<i class="fa fa-chevron-right" aria-hidden="true"></i></a> </div>
+          </div>
+        </div>
+       {% endfor %} 
+      </div>
+    </div>
+  </section>
+  <!--ADS SECTION END--> 
+  
+  <!--FEATURED PRODUCTS SECTION START-->
+  <section class="featured-products">
+    <div class="container">
+      <div class="heading-style-1">
+        <h2>Parfums en Vogue</h2>
+      </div>
+      <div class="row">
+        {% set val = 0 %}
+        {% for item in node.field_zone_1_2_1_front_page %}
+          {% set val = val + 1 %}
+          {% set p = paragraph_load(item.target_id) %}
+          {% if p.field_picture_z_1_2_1.target_id is defined %}
+             {% set  url_image = image_style(p.field_picture_z_1_2_1.target_id,'original') %}
+          {% endif %}
+          {% if val == 1 %}
+              <div class="col-md-6 col-sm-4">
+                <div class="product-box">
+                  <div class="outer">
+                    <div class="product-frame"> {% if p.field_sale_z_1_2_1.value  == 1 %}<span class="sale-batch"> Sale</span>{% endif %} <img src="{{url_image}}" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                      <div class="caption">
+                        <ul>
+                          <li><a href="{{ p.field_facebook_z_1_2_1.0.url }}"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                          <li><a href="{{ p.field_twitter_z_1_2_1.0.url }}"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                          <li><a href="{{ p.field_twitter_z_1_2_1.0.url }}"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-box">
+                    <h3>{% if p.field_main_title_z_1_2_1.value is not empty %} <a href="product-detail.html"> {{ p.field_main_title_z_1_2_1.value|raw }} </a>{% endif %}</h3>
+                    <strong class="price">{% if p.field_price_z_1_2_1.value is not empty %} {{ p.field_price_z_1_2_1.value|raw }} {% endif %}</strong> </div>
+                </div>
+              </div>
+          {% endif %}  
+
+          {% if (val == 2) or (val == 3) %}
+              {% if (val == 2) %}
+                <div class="col-md-3 col-sm-4">
+              {% endif %} 
+                  <div class="product-box">
+                    <div class="outer">
+                      <div class="product-frame"> <img src="{{url_image}}" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                        <div class="caption">
+                          <ul>
+                          <li><a href="{{ p.field_facebook_z_1_2_1.0.url }}"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                          <li><a href="{{ p.field_twitter_z_1_2_1.0.url }}"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                          <li><a href="{{ p.field_twitter_z_1_2_1.0.url }}"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                        </ul>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-box">
+                      <h3><a href="product-detail.html">{% if p.field_main_title_z_1_2_1.value is not empty %}{{ p.field_main_title_z_1_2_1.value|raw }}{% endif %}</a></h3>
+                      <strong class="price">{% if p.field_price_z_1_2_1.value is not empty %} {{ p.field_price_z_1_2_1.value|raw }} {% endif %}</strong> </div>
+                  </div>
+              {% if (val == 3) %}
+                </div>
+              {% endif %} 
+          {% endif %}       
+          {% if (val == 4) %}               
+              <div class="col-md-3 col-sm-4">
+                <div class="product-box">
+                  <div class="outer">
+                    <div class="product-frame"> <img src="{{url_image}}" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                      <div class="caption">
+                        <ul>
+                          <li><a href="{{ p.field_facebook_z_1_2_1.0.url }}"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                          <li><a href="{{ p.field_twitter_z_1_2_1.0.url }}"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                          <li><a href="{{ p.field_twitter_z_1_2_1.0.url }}"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-box">
+                    <h3><a href="product-detail.html">{% if p.field_main_title_z_1_2_1.value is not empty %}{{ p.field_main_title_z_1_2_1.value|raw }}{% endif %}</a></h3>
+                    <strong class="price">{% if p.field_price_z_1_2_1.value is not empty %} {{ p.field_price_z_1_2_1.value|raw }} {% endif %}</strong> </div>
+                </div>
+              </div>
+          {% endif %}           
+        {% endfor %} 
+      </div>
+      <div class="featured-product-banner"> 
+        <img src="{{ file_url(content.field_picture_2_queen['#items'].entity.uri.value) }}" alt="img">
+        <div class="caption"> 
+          <strong class="title">{{ node.field_main_title_2_queen.value }} <b>{{ node.field_sub_title_2_queen.value }}</b></strong> 
+          <a href="{{node.field_url_catalogue_2_queen.0.url}}" class="btn-style-1">Parcourir le Catalogue<i class="fa fa-angle-right" aria-hidden="true"></i></a> 
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--FEATURED PRODUCTS SECTION END--> 
+  
+  <!--NEW ARRIVED JEWELRY SECTION START-->
+  <section class="new-arrived-product">
+    <div class="container">
+      <div class="heading-style-1">
+        <h2>Nouvel Arrivage</h2>
+      </div>
+      <div class="row">
+
+        {% for product in products %}
+          <div class="col-md-3 col-sm-6">
+            <div class="product-box">
+              <div class="outer">
+                <div class="product-frame"> <img src="{{ product.photo_url }}" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                  <div class="caption">
+                    <ul>
+                      <li><a href="#"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                      <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                      <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="text-box">
+                <h3><a href="product-detail.html">{{ product.title }}</a></h3>
+                <strong class="price">{{ product.price }}</strong> </div>
+            </div>
+        </div>       
+        {% endfor %}
+
+
+      </div>
+      <div class="btn-row"><a href="product.html" class="btn-style-1">Voir la Liste Complète<i class="fa fa-angle-right" aria-hidden="true"></i></a></div>
+    </div>
+  </section>
+  <!--NEW ARRIVED JEWELRY SECTION END--> 
+    
+  <!--OUR PARTNERS SECTION START-->
+  <section class="our-partners">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="holder">
+            <div class="heading-style-1">
+              <h2>Nos Marques Références</h2>
+            </div>
+            <div class="inner-col">
+              <div class="owl-carousel" id="partnets-slider">
+                {% for item in node.field_partners_front_page %}
+                  {% set p = paragraph_load(item.target_id) %}
+                  {% if p.field_picture_partner.target_id is defined %}
+                     {% set  url_image = image_style(p.field_picture_partner.target_id,'original') %}
+                  {% endif %}
+
+                  <div class="item">
+                    <div class="box"><a href="{{ p.field_url_partner.0.url }}"><img src="{{url_image}}" alt="img"></a></div>
+                  </div>
+                {% endfor %}                     
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--OUR PARTNERS SECTION END--> 
+ 
+<!--POPULAR JEWELRY SECTION START-->
+{#   <section class="popular-jewlery">
+    <div class="container">
+      <div class="heading-style-1">
+        <h2>Le Choix de nos Clients</h2>
+      </div>
+    </div>
+    <div class="container-fluid">
+      <div class="owl-carousel" id="popular-product">
+        <div class="item">
+          <div class="product-box">
+            <div class="outer">
+              <div class="product-frame"> <img src="images/popular-products-img-1.jpg" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                <div class="caption">
+                  <ul>
+                    <li><a href="#"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="text-box">
+              <h3><a href="product-detail.html">Lancôme La Nuit Tresor</a></h3>
+              <strong class="price">$199.00 <span>-</span> $399.00</strong> </div>
+          </div>
+        </div>
+        <div class="item">
+          <div class="product-box">
+            <div class="outer">
+              <div class="product-frame"> <img src="images/popular-products-img-2.jpg" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                <div class="caption">
+                  <ul>
+                    <li><a href="#"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="text-box">
+              <h3><a href="product-detail.html">Tom Ford Noir</a></h3>
+              <strong class="price">$99.00 <span>-</span> $199.00</strong> </div>
+          </div>
+        </div>
+        <div class="item">
+          <div class="product-box">
+            <div class="outer">
+              <div class="product-frame"> <img src="images/popular-products-img-3.jpg" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                <div class="caption">
+                  <ul>
+                    <li><a href="#"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="text-box">
+              <h3><a href="product-detail.html">Dolce &amp; Gabbana</a></h3>
+              <strong class="price">$144.00 <span>-</span> $288.00</strong> </div>
+          </div>
+        </div>
+        <div class="item">
+          <div class="product-box">
+            <div class="outer">
+              <div class="product-frame"> <img src="images/popular-products-img-4.jpg" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                <div class="caption">
+                  <ul>
+                    <li><a href="#"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="text-box">
+              <h3><a href="product-detail.html">Versace Eros</a></h3>
+              <strong class="price">$80.00 <span>-</span> $160.00</strong> </div>
+          </div>
+        </div>
+        <div class="item">
+          <div class="product-box">
+            <div class="outer">
+              <div class="product-frame"> <img src="images/popular-products-img-5.jpg" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                <div class="caption">
+                  <ul>
+                    <li><a href="#"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="text-box">
+              <h3><a href="product-detail.html">Hugo Boss</a></h3>
+              <strong class="price">$199.00 <span>-</span> $299.00</strong> </div>
+          </div>
+        </div>
+        <div class="item">
+          <div class="product-box">
+            <div class="outer">
+              <div class="product-frame"> <img src="images/popular-products-img-6.jpg" alt="img"> <a href="#" class="share"><i class="fa fa-share-alt" aria-hidden="true"></i></a>
+                <div class="caption">
+                  <ul>
+                    <li><a href="#"><i class="fa fa-eye" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                    <li><a href="#"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="text-box">
+              <h3><a href="product-detail.html">Pure Poison</a></h3>
+              <strong class="price">$199.00 <span>-</span> $399.00</strong> </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section> #}
+  <!--POPULAR JEWLARY SECTION END--> 
+ 
+  <!--COLLECTION GALLERY START-->
+  <section class="collection-gallery">
+    <div class="container">
+      <div class="heading-style-1">
+        <h2>Comment bien Choisir son Parfum</h2>
+      </div>
+    </div>
+    <div class="owl-carousel" id="collection-galeery-1">
+      {% for item in node.field_gallery_front_page %}
+        {% set p = paragraph_load(item.target_id) %}
+        {% if p.field_picture_gallery.target_id is defined %}
+          {% set  url_image = image_style(p.field_picture_gallery.target_id,'original') %}
+        {% endif %}        
+        <div class="item">
+          <div class="frame"><a href="{{ p.field_url_gallery.0.url }}"><img src="{{url_image}}" alt="img"></a></div>
+        </div>
+      {% endfor %}  
+    </div>
+  </section>
+  <!--COLLECTION GALLERY END--> 
+  
+  
+  
+</div>
+
