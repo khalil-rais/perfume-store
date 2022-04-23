@@ -1,0 +1,612 @@
+<?php
+
+/**
+ * @file
+ * A basic Drupal 8 Hello World Module.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+ 
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use \Drupal\parfum\Controller\ParfumController;
+use Drupal\Component\Render\MarkupInterface;
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\Xss;
+use \Drupal\Core\Render\Markup ;
+use Drupal\profile\Entity\Profile;
+
+
+function parfum_permission() {
+  $permissions = array(
+    'view parfum' => array(
+      'title' => t('View Parfum module'),
+      'description' => t('View the Parfum module page.'),
+    ),
+  );
+  return $permissions;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function parfum_theme() {
+  return array(
+    'parfum_primary_page' => array(
+      'template' => 'parfum_primary_page',
+      'variables' => array(
+        'items' => array(),
+      ),
+    ),
+  );
+}
+
+/*function parfum_mail($key, &$message, $params){
+	
+	$message['subject'] = "Confirmation de votre commande ParfumStreet";
+	
+	\Drupal::logger('parfum')->notice('A new mail has been sent!');
+}*/
+
+function parfum_mail_alter(&$message){
+
+	if (isset($message['id']) && $message['id'] == 'commerce_order_receipt') {
+		 $message['send'] = FALSE;
+		$source = 'contact@parfumstreet.fr';
+		$copie =  'contact@parfumstreet.fr';
+		
+		$texte_html= '<p>Madame/Monsieur,</p><p>Nous vous confirmons que votre commande a bien &eacute;t&eacute; enregistr&eacute;e et elle est en cours de traitement.</p><p>Toute l\'&eacute;quipe <span style="color: #a30207;"><strong>ParfumStreet</strong></span> vous remercie et reste disponible pour toute demande ou question</p><p><em>Bien Cordialement,</em><br /><em>I. Barbouch</em><br /></p>';
+		
+		$order = $message['params']['order'];
+		$destination = $order->getEmail();
+			
+		$pdf_order = array();
+		$pdf_order ['uid']= $order->getOrderNumber();
+		$pdf_order ['id']= date('Ymd').'-'.$pdf_order ['uid'];
+		$pdf_order ['file_name'] = $pdf_order ['id'].'.pdf';
+		$pdf_order ['order_time']= date('d-m-Y');
+		$pdf_order ['nature']= 'Commande Client';
+		$pdf_order ['subdirectory']= 'commande';
+		
+		$titre_mail = 'Confirmation de Commande ParfumStreet '.$pdf_order ['id'];
+
+		$shipments = $order->get("shipments")->getValue()[0]['target_id'];
+		$shipments = \Drupal\commerce_shipping\Entity\Shipment::load($shipments);
+		$address = $shipments->getShippingProfile()->get('address')->getValue();		
+		$address = $address[0];
+		
+		//dpm ($shipments->get('field_telephone')->getValue());
+		
+		$telephone = $shipments->get('field_telephone')->getValue();
+		$telephone = $telephone[0]['value'];
+		
+		
+		//dpm($address);
+			
+		$cedex= !empty($address["sorting_code"])?" Cedex ".$address["sorting_code"]:"";
+		$Name = isset($address["family_name"])?$address["family_name"]:"";
+		$SecondName = isset($address["given_name"])?$address["given_name"]:"";
+		$Street1 = isset($address["address_line1"])?$address["address_line1"]:"";
+		$Street2 = isset($address["address_line2"])?$address["address_line2"]:"";
+		$City = isset($address["locality"])?$address["locality"]:"";
+		$PostalCode = isset($address["postal_code"])?$address["postal_code"].' '.$City.' '.$cedex:"";
+		
+		$pdf_order ['adresse_client'] = array ($Street1, $Street2, $PostalCode);
+		$pdf_order ['nom_client']= $SecondName.' '.$Name;
+		$pdf_order ['telephone']= $telephone;
+		$pdf_order ['message']= "Nous procèderons à l'envoi du colis dès la réception de votre virement sur notre compte. Vous pouvez consulter nos conditions générales de vente sur cette adresse http://parfumstreet.fr/cgv Pour toute demande ou réclamation, nous sommes à votre disposition au 06 17 87 76 80 ou par e-mail contact@parfumstreet.fr";
+			
+		//Copier le shipping profile dans le billing profile pour éviter une double saisie.
+		$profile = Profile::create([
+			'type' => 'customer',
+			'address' => [
+			'country_code' => 'FR',
+				'sorting_code' => !empty($address["sorting_code"])?" Cedex ".$address["sorting_code"]:"",
+				'family_name' => isset($address["family_name"])?$address["family_name"]:"",
+				'given_name' => isset($address["given_name"])?$address["given_name"]:"",
+				'address_line1' => isset($address["address_line1"])?$address["address_line1"]:"",
+				'address_line2' => isset($address["address_line2"])?$address["address_line2"]:"",
+				'locality' =>  isset($address["locality"])?$address["locality"]:"",
+				'postal_code' => isset($address["postal_code"])?$address["postal_code"]:"",
+			],
+		]);
+		$profile->save();
+		$order = \Drupal\commerce_order\Entity\Order::load($order->getOrderNumber());
+		$order->setBillingProfile($profile);
+		$order->save();
+		$order_items = $order->getItems();
+		$pdf_order ['Sous Total H.T'] = number_format ( $order->getSubtotalPrice()->getNumber(), 2 );
+		$Adjustments = $order->getAdjustments();
+		foreach ($Adjustments as $key_adj => $value_adj){
+			if ( $value_adj->getType() =='shipping'){
+				$pdf_order ['Frais de Port H.T'] = number_format ( $value_adj->getAmount()->getNumber(), 2 );
+			}
+		}
+			
+		$pdf_order ['TOTAL H.T'] = number_format ( $order->getTotalPrice()->getNumber(), 2 );
+		
+		$lines = array();
+		//Récupérer la liste des articles
+		foreach ($order_items as $key => $value){
+			$variation = $value->getPurchasedEntity();
+			$quantity  =  number_format ( $value->getQuantity(), 0 );					
+			$unit_price = number_format ( $variation->getPrice()->getNumber(), 2 );
+			$my_title = $variation->getTitle();
+			$sku = $variation->getSku();
+			$total_item_price = $value->getTotalPrice();
+			$total_item_price = preg_replace('/ EUR/', '', $total_item_price);
+			$total_item_price = number_format ( $total_item_price, 2 );
+			$lines [] = $sku.'|'.$my_title.'|'.$unit_price.'|'.$quantity.'|'.$total_item_price;
+		}
+		$pdf_order['lines'] = $lines;
+		$parfum_controller = new ParfumController ;
+		$parfum_controller->_generation_pdf($pdf_order);
+		_notification_mail ($source, $copie, $destination, $titre_mail, $texte_html,'sites/default/files/private/commande/',$pdf_order ['file_name'])	;
+		
+		
+		$pdf_order ['nature']= 'Facture Client';
+		$pdf_order ['subdirectory']= 'facture';				
+		$pdf_order ['message']= "Nous confirmons réception de votre paiement et nous souhaitons vous informer que le colis partira depuis nos locaux dans un jour ouvrable, nous vous communiquerons d\'ici un jour ouvrable le code de suivi de votre colis. Vous pouvez consulter nos conditions générales de vente sur cette adresse http://parfumstreet.fr/cgv Pour toute demande ou réclamation, nous sommes à votre disposition au 06 17 87 76 80 ou par e-mail contact@parfumstreet.fr";	
+		$parfum_controller->_generation_pdf($pdf_order);
+
+		
+		$pdf_order ['nature']= 'Bon de Livraison';
+		$pdf_order ['subdirectory']= 'livraison';		
+		$pdf_order ['message']= "Nous souhaitons vous informer que votre colis a quitté nos locaux et que vous pouvez le suivre sous cette référence.";
+		$parfum_controller->_generation_pdf($pdf_order);
+		
+		
+		
+		
+
+		//dpm ($pdf_order);
+		//dpm ($ShippingProfile);
+		//\Drupal::logger('parfum')->notice('Message is being sent to customer5');		
+	}
+		
+  
+
+}
+
+function parfum_commerce_order_presave($order){
+	/*ob_start();	
+	var_dump($order->getOrderNumber());
+	$dumpy = ob_get_clean();
+	\Drupal::logger('parfum')->notice('An order is created:'.$dumpy);	*/
+	
+
+
+	//\Drupal::logger('parfum')->notice('An order is created: '.$order->getOrderNumber());
+	//\Drupal::logger('parfum')->notice('An order is created: '.$order->getTotalPrice());
+	$order_number = $order->getOrderNumber();
+	
+	
+	//$order_status = $order->getState()->value;: Order Status:completed ou draft
+	//dpm ($order_status);
+	
+	//ob_start();var_dump($order_status);
+	//$dumpy = ob_get_clean();
+	//\Drupal::logger('parfum')->notice('Order Status:'.$order_status);
+			
+	if (isset ($order_number)){
+		$order_items = $order->getItems();
+				/*$tmp = $order->get('field_prix_total_engel')->getValue();
+			ob_start();
+			var_dump($tmp);
+			$dumpy = ob_get_clean();
+			\Drupal::logger('parfum')->notice('variable tmp:'.$dumpy);	*/
+			
+		$total_engel = $order->get('field_prix_total_engel')->getValue();
+		if (!isset($total_engel[0]["number"])){
+			$total_engel = 0;
+			foreach ($order_items as $key => $value){
+				//$value->getPurchasedEntityId
+				//$my_title = $variation->getTitle();
+				$variation = $value->getPurchasedEntity();
+				$purchased_quantity  = $value->getQuantity();	
+				$prix_engel = $variation->get('field_prix_engel')->getValue()[0]["number"];
+				$total_engel += $prix_engel * $purchased_quantity;					
+
+
+				//\Drupal::logger('parfum')->notice($purchased_quantity.' items were pruchased whose engel price is: '.$prix_engel);
+			}
+			//\Drupal::logger('parfum')->notice('Total Engel Price is :'.$total_engel);
+			$order->set("field_prix_total_engel", new \Drupal\commerce_price\Price(strval ($total_engel), 'EUR'));
+			//\Drupal::logger('parfum')->notice('The order '.$order->getOrderNumber().' contains '.count ($variation_list).' variations.');
+			
+		}
+
+		$stat_commande = $order->get('field_statut_commande_engel')->getValue();
+		if (isset($order->original)){
+			$stat_commande_original = $order->original->get('field_statut_commande_engel')->getValue();
+		}
+		else{
+			$stat_commande_original = 0;
+		}
+		
+		
+		
+		\Drupal::logger('parfum')->notice('Le statut de la commande est:'.$stat_commande[0]["value"].'|'.$stat_commande_original[0]["value"]);	
+		/*if (isset ($order->original)){
+			\Drupal::logger('parfum')->notice('Original is available.');	
+		}*/
+
+		//$source = variable_get('site_mail', 'talentinside@tunisieproduitetservice.com');
+		//$facture_path = $order->get('field_facture')->getValue();
+		//$file_name = $order->get('field_facture')->entity->getFilename();
+
+				
+		//$url = file_create_url($uri);
+		
+		/*ob_start();
+		var_dump($url);
+		$dumpy = ob_get_clean();
+		\Drupal::logger('parfum')->notice('Strucutre_fichier:'.$dumpy);		*/
+		
+		
+			
+		$source = 'contact@parfumstreet.fr';
+		$destination = $order->getEmail();
+		
+		if ($stat_commande_original[0]["value"]==1 and $stat_commande[0]["value"] == 2){
+			if (isset ($order->get('field_facture')->entity)){
+				$uri = $order->get('field_facture')->entity->getFileUri();
+				$filename = preg_split("/\/\//", $uri);
+				$filename = $filename[1];			
+			}
+			else{
+				$filename="";
+			}
+
+		
+			\Drupal::logger('parfum')->notice('Strucutre_fichier:'.$filename);
+			
+
+			\Drupal::logger('parfum')->notice('The order is already placed');
+			 $parfum_controller = new ParfumController ;
+			 $address = $order->getBillingProfile()->get('address')->getValue();
+				 
+			//Récupérer le téléphone
+			$shipments = $order->get("shipments")->getValue()[0]['target_id'];
+			$shipments = \Drupal\commerce_shipping\Entity\Shipment::load($shipments);
+			$address = $shipments->getShippingProfile()->get('address')->getValue();		
+			$telephone = $shipments->get('field_telephone')->getValue();
+			$telephone = $telephone[0]['value'];
+			
+			
+						 
+			 
+			 //Temporary deactivated -- Envoi de la commande Engel.
+			 $parfum_controller->send_engel_order($order_number, $order_items,$address[0],$telephone);
+
+			 
+			$texte_html= '<p>Madame/Monsieur,</p>
+			<p>Nous vous confirmons la r&eacute;ception de votre paiement et nous souhaitons vous informer que le colis partira dans un jour ouvrable, nous vous communiquerons dans un prochain mail le code de suivi de votre colis.</p>
+			<p>Toute l\'&eacute;quipe <span style="color: #a30207;"><strong>ParfumStreet</strong></span> vous remercie et reste disponible pour toute demande ou question</p>
+			<p><em>Bien Cordialement,</em><br /><em>I. Barbouch</em><br /></p>';
+
+
+			$titre_mail = 'Notification de la facture';
+			_notification_mail ($source, null, $destination, $titre_mail, $texte_html,'sites/default/files/private/',$filename)	;
+		}
+		elseif ($stat_commande_original[0]["value"]==2 and $stat_commande[0]["value"] == 3){
+			if (isset ($order->get('field_livraison')->entity)){
+				$uri = $order->get('field_livraison')->entity->getFileUri();
+				$filename = preg_split("/\/\//", $uri);
+				$filename = $filename[1];			
+			}
+			else{
+				$filename="";
+			}
+
+			$parfum_controller = new ParfumController ;
+			$TrackingURL = $parfum_controller->get_order_status($order->getOrderNumber(),$order->getCreatedTime());
+			
+
+			$texte_html= '<p>Madame/Monsieur,</p>
+			<p>Nous souhaitons vous informer que votre colis est parti aujourd\'hui et que vous pouvez le suivre via ce <a href="'.$TrackingURL.'">ce lien</a>.</p>
+			<p>Toute l\'&eacute;quipe <span style="color: #a30207;"><strong>ParfumStreet</strong></span> vous remercie et reste disponible pour toute demande ou question</p>
+			<p><em>Bien Cordialement,</em><br /><em>I. Barbouch</em><br /></p>';
+			$titre_mail = 'Notification de la livraison';
+			\Drupal::logger('parfum')->notice('texte html:'.$texte_html);
+			_notification_mail ($source, null, $destination, $titre_mail, $texte_html,'sites/default/files/private/',$filename)	;
+		}
+		else{
+			\Drupal::logger('parfum')->notice('Aucun mail envoyé:'.$stat_commande_original[0]["value"].'|'. $stat_commande[0]["value"]);
+		}
+		
+	}
+
+	
+	
+}
+
+/**
+ * Preprocess variables for the primary hello world page.
+ *
+ * @param array $variables
+ *  An associative array containing:
+ *  - items: Array of participant names.
+ */
+function template_preprocess_parfum_primary_page(&$variables) {
+  if (isset($variables['items'])) {
+    $results = db_query('SELECT * from parfum limit ' . $variables['items']);
+  }
+  else {
+    $results = db_query('SELECT * from parfum');
+  }
+  $variables['results'] = $results;
+  $variables['test_var'] = 'We can set as many variables in the preprocess 
+  function as we like, this variable called test_var simply passes this text 
+  itself to the theme template';
+
+}
+
+
+function parfum_form_alter(&$form, FormStateInterface &$form_state, $form_id) {
+  // Alter login form and add own custom submit handler.
+  //\Drupal::logger('parfum')->notice('The form id is:'.$form_id);	
+  $matches = array();
+  preg_match('/(commerce_order_item_add_to_cart_form_commerce_product_)|(views_form_commerce_cart_form_default)|(commerce_checkout_flow_multistep_default)/' , $form_id, $matches);
+  if (in_array('commerce_order_item_add_to_cart_form_commerce_product_',$matches)) {
+	$form['actions']['submit']['#submit'][] = '_parfum_redirect_to_catalog_submit';
+	$session = \Drupal::request()->getSession();    
+    if (empty($session->get('my_http_referer')) and isset ($_SERVER ["HTTP_REFERER"])) {
+      $session->set('my_http_referer', $_SERVER ["HTTP_REFERER"]);
+	  \Drupal::logger('parfum')->notice('Referrer is set to:'.$_SERVER ["HTTP_REFERER"]);
+    }
+	else{
+		$exist = $session->get('my_http_referer');
+		\Drupal::logger('parfum')->notice('Referrer already exist:'.$exist);	
+	}
+  }
+  elseif (in_array('views_form_commerce_cart_form_default',$matches)) {
+		$options = ['attributes' => ['target' => '_blank']]; 
+		$internal_link_2381 = Drupal\Core\Link::createFromRoute(t(" Conditions Générales de Vente"), 'entity.node.canonical', ['node' => 2381],$options);
+		$internal_link_2382 = Drupal\Core\Link::createFromRoute(t(" d'Utilisation"), 'entity.node.canonical', ['node' => 2382],$options);;
+	  
+		$form['terms'] = array(
+			'#type' => 'checkbox',
+			'#title' => t("J'accepte les").$internal_link_2381->toString().t(" et ").$internal_link_2382->toString(),
+			'#required' => TRUE,
+		);  
+	  $form['#validate'][] = '_parfum_last_check';
+  }
+  elseif (in_array('commerce_checkout_flow_multistep_default',$matches)) {
+			$tmp = 0;
+			//ob_start();
+			//var_dump(array_keys ($form['shipping_information']));
+			//var_dump(array_keys ($form['shipping_information']['shipments'][0]["field_telephone"]));
+			//var_dump(array_keys ($form['shipping_information']['shipping_profile']));
+			//array_unshift($form['shipping_information']['shipping_profile'], $form['shipping_information']['shipments'][0]["field_telephone"]);
+			
+			//$form['shipping_information']['shipping_profile'][]= $form['shipping_information']['shipments'][0]["field_telephone"];
+			//unset ($form['shipping_information']['shipments'][0]["field_telephone"]);
+			//var_dump($form['shipping_information']['shipments']);
+			//$dumpy = ob_get_clean();
+			//\Drupal::logger('parfum')->notice('Ce formulaire:'.$dumpy);		  
+  }
+}
+function _parfum_last_check(array &$form, FormStateInterface $form_state) {
+	//\Drupal::logger('parfum')->notice('Customized validation function');
+	//dpm ($form_state->getUserInput());
+	$getUserInput = $form_state->getUserInput();
+	if ($getUserInput['op']=='Checkout'){
+		$view = reset($form_state->getBuildInfo()['args']);
+		if (!empty($view->argument['order_id']->value[0])){
+			$order = \Drupal\commerce_order\Entity\Order::load($view->argument['order_id']->value[0]);
+			$total_ht = $order->getSubtotalPrice()->getNumber();
+			$order_items = $order->getItems();
+			$lines = array();
+			$product_list = array();			
+			foreach ($order_items as $key => $value){
+				$variation = $value->getPurchasedEntity();
+				$quantity  =  number_format ( $value->getQuantity(), 0 );					
+				$unit_price = number_format ( $variation->getPrice()->getNumber(), 2 );
+				$my_title = $variation->getTitle();
+				$sku = $variation->getSku();
+				$total_item_price = $value->getTotalPrice();
+				$total_item_price = preg_replace('/ EUR/', '', $total_item_price);
+				$total_item_price = number_format ( $total_item_price, 2 );
+				$engel_id = $variation->get('field_engelid')->getValue()[0]["value"];
+				$lines [] = $sku.'|'.$my_title.'|'.$unit_price.'|'.$quantity.'|'.$total_item_price.'|'.$engel_id;
+				$product_list [$engel_id] = array ('title' => $my_title, 'qte' => $quantity);
+				
+			}
+			$parfum_controller = new ParfumController ;					//////////////////////////////////////////////////
+			$to_be_removed_articles = $parfum_controller->_detect_changed_stock($product_list);
+			$to_be_removed_articles = $to_be_removed_articles ['Stock'];
+			/*
+			$stock_status = $parfum_controller->_get_stock_status();
+
+			$i = 0;
+			$product_engel_indexes = array_keys ($product_list);
+			$to_be_removed_articles = array();
+			$seuil_limite = 5;
+			while ($i < count ($stock_status) and count ($product_engel_indexes)>0){
+				$key = array_search($stock_status[$i]['Id'], $product_engel_indexes); 
+				
+				if (is_numeric($key) ){					
+					if ($stock_status[$i]['Stock'] < $product_list [$product_engel_indexes[$key]]['qte']+$seuil_limite){
+						$to_be_removed_articles [$product_engel_indexes[$key]] = $stock_status[$i]['Stock'] - $seuil_limite;
+					}
+					unset ($product_engel_indexes[$key]);
+				}
+				$i++;
+			}*/
+			/////////////////////////////////
+			$no_selected_element = array ();			
+			foreach ($to_be_removed_articles as $key => $value){
+				if ($value <=0){
+					$message_header = 'Il ne reste aucun ';
+				}
+				else{
+					$message_header = 'Il ne reste que '.$value;
+				}
+				$form_state->setError($no_selected_element, $message_header. ' élément(s) de l\'article '.$product_list[$key]['title'].'. Veuillez réduire la quantité et cliquer sur mettre à jour le panier, puis Checkout.');
+			}
+			$max_value = 900;
+			if ($total_ht > $max_value){
+				$form_state->setError($no_selected_element, 'Pour des contraintes de sécurité, la valeur totale du panier ne doit pas dépasser €'.$max_value.'.00. Veuillez revoir le panier puis cliquer sur mettre à jour le panier, puis Checkout ');
+			}
+			
+		}		
+	}
+}
+function parfum_preprocess_input(&$variables) {
+  /*if (array_key_exists('#id', $variables['element'])) {
+    $key = 'edit-payment-information-add-payment-method-billing-information-address-0-address';
+    $addressArray = [
+      'given-name' => 'First Name',
+      'family-name' => 'Last Name',
+      'organization' => 'Company',
+      'address-line1' => 'Address',
+      'address-line2' => 'Secondary Address',
+      'postal-code' =>'Posta Code',
+      'locality' => 'City'
+    ];
+    $id = $variables['element']['#id'];
+    foreach ($addressArray as $k => $name){
+      $idSearch = $key.'-'.$k;
+      if($id == $idSearch){
+        $variables['attributes']['placeholder']= $variables['element']['#title'];
+      }
+    }
+  }*/
+  
+  //preg_match('/edit-payment-information-add-payment-method-billing-information-address-0-address/' ,     $variables['attributes']['data-drupal-selector'], $matches);
+  //preg_match('/edit-payment-information-add-payment-method-billing-information-address-0-[address-given-name|address-family-name|address-address-line1|address-postal-code|address-locality]/' ,     $variables['attributes']['data-drupal-selector'], $matches);
+  $matches = array();
+  if (isset($variables['attributes']['data-drupal-selector'])){
+	preg_match('/(edit-payment-information-add-payment-method-billing-information-address-0-|edit-payment-information-billing-information-address-0-)(address-given-name|address-family-name|address-given-name|address-family-name|address-address-line1|address-postal-code|address-locality)/' ,     $variables['attributes']['data-drupal-selector'], $matches);  
+  }
+  
+  
+		//edit-payment-information-add-payment-method-billing-information-address-0-[address-given-name|address-family-name|address-address-line1|address-postal-code|address-locality]
+		/*edit-payment-information-add-payment-method-billing-information-address-0-address-given-name
+		edit-payment-information-add-payment-method-billing-information-address-0-address-family-name
+		edit-payment-information-add-payment-method-billing-information-address-0-address-address-line1
+		edit-payment-information-add-payment-method-billing-information-address-0-address-postal-code
+		edit-payment-information-add-payment-method-billing-information-address-0-address-locality*/
+	 
+  //dpm ( $variables['attributes']);
+  if (count($matches)>0) {
+	  //dpm ($variables['attributes']);
+	  //if ($matches [1]== 'address-postal-code'){
+		if (in_array('address-postal-code', $matches)){
+		$variables['attributes']['value']="00000";  
+	  }
+	  else{
+		$variables['attributes']['value']="Identique à livraison.";  
+	  }
+	  
+	  //dpm ( $variables['attributes']);
+  }
+  
+  //edit-payment-information-add-payment-method-billing-information-address-0-address-given-name
+    
+  //dpm ( $variables['element']['#value']);
+  //dpm ( array_keys ($variables['element']['#value']));
+}
+
+
+/**
+ * Custom submit handler for login form.
+ */
+function _parfum_redirect_to_catalog_submit($form, FormStateInterface $form_state) {
+	$session = \Drupal::request()->getSession();    
+	$HTTP_REFERER = $session->get('my_http_referer');
+	if (!empty ($HTTP_REFERER)){
+		$url_parts = preg_split("/\//", $HTTP_REFERER);
+		$form_state->setRedirectUrl(Url::fromUri('internal:/'.end($url_parts)));
+			/*ob_start();
+			var_dump($url_parts);
+			$dumpy = ob_get_clean();
+			\Drupal::logger('parfum')->notice('Ajouter au panier500:'.$dumpy);	*/
+			
+		$session->remove('my_http_referer');
+	}
+		
+
+	//\Drupal::logger('parfum')->notice('Ajouter au panier50:'.$HTTP_REFERER);	
+	
+	/*var_dump($form['#submit']);
+	$dumpy = ob_get_clean();
+	\Drupal::logger('parfum')->notice('Changed Submit Array:'.$dumpy);*/	
+
+	
+ 
+}
+
+/*
+function parfum_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  // Adding custom validation for the welcome page type field.
+  preg_match('/commerce_order_item_add_to_cart_form_commerce_product_/' , $form_id, $matches);
+  if (count($matches)>0) {
+    // Do some stuff.
+	\Drupal::logger('parfum')->notice('Ajouter au panier2');
+	//$form_state->setRedirect('catalogue-soins-cheveux');
+	
+	//$form_state->setRedirectUrl(Url::fromInternalUri('catalogue-soins-cheveux'));
+	//$form_state->setRedirectUrl(Url::fromUri('https://google.com'));
+	//$form_state->setRedirectUrl(Url::fromUri('internal:/catalogue-soins-cheveux'));
+	$form->setRedirectUrl(Url::fromUri('internal:/catalogue-soins-cheveux'));
+	
+  }
+
+}*/
+
+
+/*function parfum_mail($key, &$message, $params){
+	\Drupal::logger('parfum')->notice('A mail has been sent!');
+}*/
+
+
+
+function _notification_mail ($source, $cc=null, $destination, $sujet, $message_html,$path=null,$filename=null) {
+
+	
+	$random_hash = md5(date('r', time())); 
+	
+	
+	$headers = "From: ParfumStreet <".$source.">\r\nReply-To: ".$source . "\r\n";
+	if (isset ($cc)){
+		$headers .= 'Cc: '.$cc . "\r\n";
+	}
+	$headers .= "Content-Type: multipart/mixed; boundary=\"PHP-mixed-".$random_hash."\""; 
+	
+	//define the body of the message. 
+	
+	$message ="--PHP-mixed-".$random_hash."\n";
+	$message.="Content-Type: multipart/alternative; boundary=\"PHP-alt-".$random_hash."\"\n\n";
+	$message.="--PHP-alt-".$random_hash."\n";
+	$message.="Content-Type: text/html; charset=\"UTF-8\"" ."\n";
+	$message.="Content-Transfer-Encoding: 7bit"."\n\n";
+	$message.="<html>
+<head>
+<title>Notification email</title>
+</head>
+<body>".$message_html."
+</body>
+</html>"."\n\n";
+	$message.="--PHP-alt-".$random_hash."--\n\n";
+	
+	if (isset($filename)){
+		
+		$attachment = chunk_split(base64_encode(file_get_contents($path.$filename))); 
+		$message.="--PHP-mixed-".$random_hash."\n";
+		$message.="Content-Type: application/zip; name=\"".$filename."\""."\n";
+		$message.="Content-Transfer-Encoding: base64"."\n";
+		$message.="Content-Disposition: attachment  ."."\n\n";
+		$message.=$attachment;
+		$message.="--PHP-mixed-".$random_hash."-- \n";	
+	}
+	
+	$mail_sent = @mail( $destination, '=?utf-8?B?'.base64_encode($sujet).'?=', $message, $headers ); 
+	
+}
+
+

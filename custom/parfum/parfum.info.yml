@@ -1,0 +1,6 @@
+name:  Parfum
+type:  module
+description:  'Handling Parfum Street Module'
+package:  Custom Modules
+version:  1.0
+core:  8.x

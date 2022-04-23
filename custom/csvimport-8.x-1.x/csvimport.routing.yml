@@ -1,0 +1,35 @@
+Parfumcheck:
+  path: admin/Parfumcheck
+  defaults:
+    _form: \Drupal\csvimport\Form\Parfumcheck
+    _title: Vérification du stock et mise à jour des prix
+  requirements:
+    _permission: administer site configuration
+parfum-update:
+  path: admin/Parfumupdate
+  defaults:
+    _form: \Drupal\csvimport\Form\Parfumupdate
+    _title: Ajouter ou mettre à jour les articles
+  requirements:
+    _permission: administer site configuration
+webimport:
+  path: admin/web-import
+  defaults:
+    _form: \Drupal\csvimport\Form\CSVimportWeb
+    _title: Import WEB
+  requirements:
+    _permission: administer site configuration
+csvimport:
+  path: admin/csv-import
+  defaults:
+    _form: \Drupal\csvimport\Form\CSVimportForm
+    _title: Import CSV
+  requirements:
+    _permission: administer site configuration	
+csvbatch:
+  path:  'batch2/{options1}/{options2}'
+  defaults:
+    _controller:  '\Drupal\csvimport\Form\CSVController::batch_example'
+    _title: 'Parfum Batch'
+  requirements:
+    _permission: 'access content'

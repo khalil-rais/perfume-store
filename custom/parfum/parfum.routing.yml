@@ -1,0 +1,115 @@
+update_parfum_articles:
+  path:  '/update_parfum_articles/{page}/{product_quantity}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::update_parfum_articles'
+    _title: 'Chercher et Mettre à Jour les Articles Parfums Uniquement'
+  requirements:
+    _permission: 'access content'
+check_changed_stock:
+  path:  '/check_changed_stock/{from}/{to}/{use_case}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::check_changed_stock'
+    _title: 'Vérifier les modifications de stock'
+  requirements:
+    _permission: 'access content'
+removeAllPerfumeExtraPrices:
+  path:  '/removeAllPerfumeExtraPrices/{from}/{offset}/{use_case}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::removeAllPerfumeExtraPrices'
+    _title: 'Supprimer les prix parfums hors intervalles'
+  requirements:
+    _permission: 'access content'
+removeAllExceptPerfume:
+  path:  '/removeAllExceptPerfume/{from}/{offset}/{use_case}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::removeAllExceptPerfume'
+    _title: 'Supprimer les articles hors parfums'
+  requirements:
+    _permission: 'access content'
+managing_Marques:
+  path:  '/managing_Marques/{from}/{to}/{use_case}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::managing_Marques'
+    _title: 'Vérifier les marques'
+  requirements:
+    _permission: 'access content'
+check_variationcriteria:
+  path:  '/check_variationcriteria/{from}/{to}/{use_case}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::checkVariationCriteria'
+    _title: 'Vérifier les critères de Variation'
+  requirements:
+    _permission: 'access content'
+check_image:
+  path:  '/check_image/{pages}/{elements}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::_get_webservice_check_image'
+    _title: 'Vérifier les images'
+  requirements:
+    _permission: 'access content'
+compare_test:
+  path:  '/compare_test/{pages}/{elements}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::_get_webservice_page_test'
+    _title: 'Comparer les versions'
+  requirements:
+    _permission: 'access content'
+parfum_test:
+  path:  '/createtestvariation'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::createTestVariation'
+    _title: 'Ajouter un article de test'
+  requirements:
+    _permission: 'access content'
+supprimer_article:
+  path:  '/supprimer_article/{article_type}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::removeAllNode'
+    _title: 'Supprimer Articles'
+  requirements:
+    _permission: 'access content'
+parfum_settings:
+  path:  '/parfum/{page}/{product_quantity}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::myCallbackMethod'
+    _title: 'Parfum'
+  requirements:
+    _permission: 'access content'
+parfum_batch:
+  path:  '/parfum_batch/{options1}/{options2}'
+  defaults:
+    _controller:  '\Drupal\parfum\Controller\ParfumController::batch_example'
+    _title: 'Parfum Batch'
+  requirements:
+    _permission: 'access content'
+first.form:
+  path:  '/first/form'
+  defaults:
+    _form: '\Drupal\parfum\Form\FirstForm'
+  requirements:
+    _permission: 'access content'
+bookschedule.form:
+  path:  '/bookschedule'
+  defaults:
+    _form: '\Drupal\parfum\Form\BookSchedule'
+  requirements:
+    _permission: 'access content'
+sessionfollowup.form:
+  path:  '/sessionfollowup'
+  defaults:
+    _form: '\Drupal\parfum\Form\SessionFollowup'
+  requirements:
+    _permission: 'access content'
+searchproduct.autocomplete:
+  path: '/parfum/autocomplete'
+  defaults:
+    _controller: '\Drupal\parfum\Controller\SearchProductController::autocomplete'
+    _format: json
+  requirements:
+    _access: 'TRUE'
+checkcookies:
+  path:  '/parfum/checkcookies'
+  defaults:
+    _controller: '\Drupal\parfum\Controller\SessionController::content'
+  requirements:
+    _permission: 'access content'

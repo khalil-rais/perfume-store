@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function parfume_layout_theme() {
+
+	return array(
+		// Blocks themes
+		// ---------------------------------------------------------------------
+		'theme_layout_top_header_block' => array(
+			'variables' => ['variables' => []],
+			'template'  => 'blocks/topheader'
+		),
+		'theme_layout_footer_block' => array(
+			'variables' => ['variables' => []],
+			'template'  => 'blocks/footer'
+		)
+	);
+}
